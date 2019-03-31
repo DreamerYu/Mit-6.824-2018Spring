@@ -47,7 +47,7 @@ func doMap(
 		enc := json.NewEncoder(file)
 		for _, kv := range reducePair[i] {
 			error_code := enc.Encode(&kv)
-			if error_code !+ nil{
+			if error_code != nil{
 				log.Fatal("doMap : JSON Encode", error)
 			}
 		}
