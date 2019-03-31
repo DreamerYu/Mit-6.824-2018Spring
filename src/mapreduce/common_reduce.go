@@ -2,6 +2,7 @@ package mapreduce
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"os"
 	"sort"
@@ -17,7 +18,7 @@ func (a kvSortByKey) Swap(i, j int){
 	a[i], a[j] = a[j], a[i]
 }
 func (a kvSortByKey) Less(i, j int) bool {
-	return a[j].Key < a[i].Key
+	return a[i].Key < a[j].Key
 }
 
 func doReduce(
@@ -40,10 +41,10 @@ func doReduce(
 		decode := json.NewDecoder(file)
 		for{
 			error_decode := decode.Decode(&kv)
-			if error_decode == nil {
+			kvPairs = append(kvPairs, kv)
+			if error_decode == io.EOF {
 				break
 			}
-			kvPairs = append(kvPairs, kv)
 		}
 		file.Close()
 	}
@@ -64,8 +65,8 @@ func doReduce(
 			outputKV = append(outputKV, KeyValue{preKey, reduceF(preKey, values)})
 			values = make([]string, 0)
 			values = append(values, kvPairs[i].Value)
-			preKey = kvPairs[i].Key
 		}
+		preKey = kvPairs[i].Key
 	}
 
 	// write json into output file
@@ -74,6 +75,7 @@ func doReduce(
 		log.Fatal("doReduce : writeFile", error)
 	}
 
+	defer file.Close()
 	encoder := json.NewEncoder(file)
 	for _,kvPair := range outputKV{
 		error_encode := encoder.Encode(&kvPair)
@@ -82,7 +84,6 @@ func doReduce(
 		}
 	}
 
-	file.Close()
 
 	//
 	// doReduce manages one reduce task: it should read the intermediate
