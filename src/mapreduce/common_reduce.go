@@ -30,59 +30,43 @@ func doReduce(
 ) {
 
 	// read json data from files
-	var kvPairs []KeyValue
-	for i := 0; i < nMap; i++ {
-		file, error := os.Open(reduceName(jobName, i, reduceTask))
-		if error != nil{
-			log.Fatal("doReduce : openFile", error)
+	kvPairs := make(map[string][]string)
+	keys := make([]string, 0)
+
+	for i := 0; i < nMap; i++{
+		file, err := os.Open(reduceName(jobName, i, reduceTask))
+		if err != nil{
+			log.Fatal("doReduce : read JSON", err)
 		}
 
 		var kv KeyValue
-		decode := json.NewDecoder(file)
-		for{
-			error_decode := decode.Decode(&kv)
-			kvPairs = append(kvPairs, kv)
-			if error_decode == io.EOF {
-				break
-			}
-		}
-		file.Close()
-	}
-
-	// sort keyValue Pairs by Key
-	sort.Sort(kvSortByKey(kvPairs))
-
-	var preKey string = kvPairs[0].Key
-	var values []string
-	var outputKV []KeyValue
-	for i := 0; i < len(kvPairs); i++{
-		if kvPairs[i].Key == preKey{
-			values = append(values, kvPairs[i].Value)
-			if i == (len(kvPairs) - 1){
-				outputKV = append(outputKV, KeyValue{preKey, reduceF(preKey, values)})
-			}
-		}else{
-			outputKV = append(outputKV, KeyValue{preKey, reduceF(preKey, values)})
-			values = make([]string, 0)
-			values = append(values, kvPairs[i].Value)
-		}
-		preKey = kvPairs[i].Key
-	}
-
-	// write json into output file
-	file, error := os.Create(outFile)
-	if error != nil{
-		log.Fatal("doReduce : writeFile", error)
-	}
-
-	defer file.Close()
-	encoder := json.NewEncoder(file)
-	for _,kvPair := range outputKV{
-		error_encode := encoder.Encode(&kvPair)
-		if error_encode != nil{
-			log.Fatal("doReduce : encode", error_encode)
+		decoder := json.NewDecoder(file)
+		error_decode := decoder.Decode(&kv)
+		for error_decode != io.EOF  {
+			kvPairs[kv.Key] = append(kvPairs[kv.Key], kv.Value)
+			error_decode = decoder.Decode(&kv)
 		}
 	}
+
+	for key := range kvPairs{
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+
+	//write json into files
+	output, err := os.Create(outFile)
+	if err != nil{
+		log.Fatal("doReduce : write JSON", err)
+	}
+	encoder := json.NewEncoder(output)
+	for _, key := range keys{
+		error_encoder := encoder.Encode(KeyValue{key, reduceF(key, kvPairs[key])})
+		if error_encoder != nil{
+			log.Fatal("doReduce : encoder", error_encoder)
+		}
+	}
+	output.Close()
 
 
 	//
