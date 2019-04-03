@@ -2,8 +2,12 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"mapreduce"
 	"os"
+	"strconv"
+	"strings"
+	"unicode"
 )
 
 //
@@ -15,6 +19,18 @@ import (
 //
 func mapF(filename string, contents string) []mapreduce.KeyValue {
 	// Your code here (Part II).
+	var slices []mapreduce.KeyValue
+
+	function := func(c rune) bool{
+		return !unicode.IsLetter(c)
+	}
+
+	var splitContents = strings.FieldsFunc(contents, function)
+	for _,str := range splitContents{
+		slices = append(slices, mapreduce.KeyValue{str, "1"})
+	}
+	return slices
+
 }
 
 //
@@ -24,6 +40,15 @@ func mapF(filename string, contents string) []mapreduce.KeyValue {
 //
 func reduceF(key string, values []string) string {
 	// Your code here (Part II).
+	var frequence int64 = 0
+	for i := 0; i < len(values); i++{
+		temp, error := strconv.ParseInt(values[i], 10, 64)
+		if error != nil{
+			log.Fatal("reduceF : string to int", error)
+		}
+		frequence += temp
+	}
+	return strconv.FormatInt(frequence, 10)
 }
 
 // Can be run in 3 ways:

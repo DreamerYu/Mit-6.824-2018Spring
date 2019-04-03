@@ -8,19 +8,6 @@ import (
 	"sort"
 )
 
-
-type kvSortByKey []KeyValue
-
-func (a kvSortByKey) Len() int {
-	return len(a)
-}
-func (a kvSortByKey) Swap(i, j int){
-	a[i], a[j] = a[j], a[i]
-}
-func (a kvSortByKey) Less(i, j int) bool {
-	return a[i].Key < a[j].Key
-}
-
 func doReduce(
 	jobName string, // the name of the whole MapReduce job
 	reduceTask int, // which reduce task this is
@@ -41,10 +28,13 @@ func doReduce(
 
 		var kv KeyValue
 		decoder := json.NewDecoder(file)
-		error_decode := decoder.Decode(&kv)
-		for error_decode != io.EOF  {
+		//error_decode := decoder.Decode(&kv)
+		for {
+			error_decode := decoder.Decode(&kv)
+			if error_decode == io.EOF{
+				break
+			}
 			kvPairs[kv.Key] = append(kvPairs[kv.Key], kv.Value)
-			error_decode = decoder.Decode(&kv)
 		}
 	}
 
