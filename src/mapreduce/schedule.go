@@ -54,7 +54,7 @@ func schedule(jobName string, mapFiles []string, nReduce int, phase jobPhase, re
 				wg.Done()
 				registerChan <- rpc_address
 			}else{
-				channel <- i
+				channel <- doTask.TaskNumber
 			}
 		}(rpc_address, doTask)
 	}
