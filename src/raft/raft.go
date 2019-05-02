@@ -216,7 +216,7 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 //
 // AppendEntries RPC handler.
 //
-func (rf *Raft) AppendEntries(args AppendEntriesArgs, reply AppendEntriesReply){
+func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply){
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 	if args.Term < rf.currentTerm{
